@@ -1,0 +1,110 @@
+# Message Hub Server Light API Tests
+# Based on QUICKSTART.md documentation and appsettings.Local.json
+
+### Variables (Working Configuration)
+@host = http://localhost:5000
+@subscriptionKey = demo-key
+
+### Variables (Alternative keys to test - currently not working)
+# The app auto-creates demo-key when no tenants are configured
+# @subscriptionKey = local-test-key-1 (configuration issue)
+# @subscriptionKey = demo-tenant-key-1
+# @subscriptionKey = demo-tenant-key-2
+
+### Health Check
+GET {{host}}/ping
+
+### 1. Send single message (HTTP Channel)
+POST {{host}}/api/message
+SubscriptionKey: {{subscriptionKey}}
+Content-Type: application/json
+
+{
+  "recipient": "+1234567890",
+  "message": "Hello from Message Hub!",
+  "channelType": "HTTP"
+}
+
+### 2. Send single message (SMPP Channel) 
+POST {{host}}/api/message
+SubscriptionKey: {{subscriptionKey}}
+Content-Type: application/json
+
+{
+  "recipient": "+1234567890",
+  "message": "Test message via SMPP",
+  "channelType": "SMPP"
+}
+
+### 3. Send batch messages
+POST {{host}}/api/messages
+SubscriptionKey: {{subscriptionKey}}
+Content-Type: application/json
+
+{
+  "messages": [
+    {
+      "recipient": "+1234567890",
+      "message": "Message 1",
+      "channelType": "HTTP"
+    },
+    {
+      "recipient": "+1234567891", 
+      "message": "Message 2",
+      "channelType": "HTTP"
+    }
+  ]
+}
+
+### 4. Get message status ✅ WORKING
+# Replace with actual messageId from POST responses above
+# Examples of real message IDs from recent requests:
+# - ee073eff-a303-4d0b-b391-e3e31bf92539
+# - 402970d5-0213-43b6-9393-05b709393488
+# - a74de77c-4639-46c1-b12f-1fa3ed1b6c5b
+# - 2ac520e0-55c1-462f-9e35-8ffb6ca9b8a6
+# - a9554fdd-d811-47dc-b305-a2bc202938fc
+
+GET {{host}}/api/messages/a9554fdd-d811-47dc-b305-a2bc202938fc/status
+SubscriptionKey: {{subscriptionKey}}
+
+### 5. Get message history ✅ WORKING
+# Returns list of all messages for the tenant with pagination support
+# Query parameters: limit (default: 50), status (filter by status)
+
+GET {{host}}/api/messages/history
+SubscriptionKey: {{subscriptionKey}}
+
+### 6. Get message history with filters (examples)
+# Get only failed messages (returns empty array since all are "Queued")
+GET {{host}}/api/messages/history?status=Failed
+SubscriptionKey: {{subscriptionKey}}
+
+# Get last 3 messages
+GET {{host}}/api/messages/history?limit=3
+SubscriptionKey: {{subscriptionKey}}
+
+# Get queued messages with limit  
+GET {{host}}/api/messages/history?status=Queued&limit=5
+SubscriptionKey: {{subscriptionKey}}
+
+### Debug: Test without SubscriptionKey to see error message
+POST {{host}}/api/message
+Content-Type: application/json
+
+{
+  "recipient": "+1234567890", 
+  "message": "Test without auth",
+  "channelType": "HTTP"
+}
+
+### Debug: Test with wrong key to see error message  
+POST {{host}}/api/message
+SubscriptionKey: wrong-key-test
+Content-Type: application/json
+
+{
+  "recipient": "+1234567890",
+  "message": "Test with wrong key", 
+  "channelType": "HTTP"
+}

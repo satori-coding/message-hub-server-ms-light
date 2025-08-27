@@ -1,0 +1,77 @@
+# .dockerignore for Message Hub Server Light
+
+# Build outputs
+bin/
+obj/
+out/
+publish/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Log files
+*.log
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment specific files
+appsettings.Local.json
+appsettings.Development.json
+appsettings.Test.json
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# IDE and editor files
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Package manager files
+packages/
+node_modules/
+
+# Test files
+*Tests/
+*Test/
+
+# Coverage reports
+coverage/
+TestResults/
+
+# Backup files
+*.bak
+*.backup

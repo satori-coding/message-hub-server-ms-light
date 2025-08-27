@@ -1,0 +1,29 @@
+  Option 1: Ohne Docker (am einfachsten)
+
+  # Im Projektverzeichnis:
+  cd /home/matthias/projects/message-hub-server-ms-light/MessageHubServerLight
+
+  # Für lokale Entwicklung starten:
+  ASPNETCORE_ENVIRONMENT=Local dotnet run
+
+  # Dann im Browser öffnen:
+  http://localhost:5000
+
+  Option 2: Mit Docker
+
+  # Docker Image bauen:
+  docker build -t message-hub-server-light .
+
+  # Container starten:
+  docker run -p 8080:8080 -e ASPNETCORE_ENVIRONMENT=Local message-hub-server-light
+
+  # Dann im Browser öffnen:
+  http://localhost:8080
+
+  📋 Was Sie in Swagger UI sehen werden:
+
+  - GET /ping - Health Check
+  - POST /api/message - Single Message senden
+  - POST /api/messages - Batch Messages senden
+  - GET /api/messages/{messageId}/status - Status abfragen
+  - GET /api/messages/history - Message History
