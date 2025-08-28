@@ -4,10 +4,6 @@ using MessageHubServerLight.Properties;
 
 namespace MessageHubServerLight.Features.MessageStatus;
 
-/// <summary>
-/// FastEndpoints endpoint for querying message status by message ID.
-/// Provides detailed status tracking information with tenant isolation.
-/// </summary>
 public class MessageStatusEndpoint : Endpoint<MessageStatusRequest, MessageStatusResponse>
 {
     private readonly GetMessageStatusHandler _handler;
@@ -24,10 +20,6 @@ public class MessageStatusEndpoint : Endpoint<MessageStatusRequest, MessageStatu
         _logger = logger;
     }
 
-    /// <summary>
-    /// Configures the message status query endpoint.
-    /// Requires SubscriptionKey header for tenant authentication and message access control.
-    /// </summary>
     public override void Configure()
     {
         Get("/api/messages/{messageId}/status");
@@ -44,12 +36,6 @@ public class MessageStatusEndpoint : Endpoint<MessageStatusRequest, MessageStatu
         });
     }
 
-    /// <summary>
-    /// Handles the message status query request.
-    /// Validates tenant authentication and retrieves status information if accessible.
-    /// </summary>
-    /// <param name="req">The message status request containing the message ID</param>
-    /// <param name="ct">Cancellation token for request cancellation</param>
     public override async Task HandleAsync(MessageStatusRequest req, CancellationToken ct)
     {
         // Extract and validate subscription key from header
@@ -105,10 +91,6 @@ public class MessageStatusEndpoint : Endpoint<MessageStatusRequest, MessageStatu
     }
 }
 
-/// <summary>
-/// Additional endpoint for retrieving message history for a tenant (future enhancement).
-/// Provides bulk status queries and filtering capabilities.
-/// </summary>
 public class MessageHistoryEndpoint : EndpointWithoutRequest<List<MessageStatusResponse>>
 {
     private readonly GetMessageStatusHandler _handler;
@@ -125,10 +107,6 @@ public class MessageHistoryEndpoint : EndpointWithoutRequest<List<MessageStatusR
         _logger = logger;
     }
 
-    /// <summary>
-    /// Configures the message history endpoint for bulk status queries.
-    /// Supports optional query parameters for filtering and pagination.
-    /// </summary>
     public override void Configure()
     {
         Get("/api/messages/history");
@@ -143,11 +121,6 @@ public class MessageHistoryEndpoint : EndpointWithoutRequest<List<MessageStatusR
         });
     }
 
-    /// <summary>
-    /// Handles the message history query request.
-    /// Returns a list of recent messages for the authenticated tenant with optional filtering.
-    /// </summary>
-    /// <param name="ct">Cancellation token for request cancellation</param>
     public override async Task HandleAsync(CancellationToken ct)
     {
         // Extract and validate subscription key from header

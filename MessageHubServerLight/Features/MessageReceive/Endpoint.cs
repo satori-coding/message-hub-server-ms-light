@@ -4,10 +4,6 @@ using MessageHubServerLight.Properties;
 
 namespace MessageHubServerLight.Features.MessageReceive;
 
-/// <summary>
-/// FastEndpoints endpoint for submitting a single message for processing.
-/// Handles message validation, tenant authentication, and queuing for async processing.
-/// </summary>
 public class MessageSubmitEndpoint : Endpoint<MessageRequest, MessageResponse>
 {
     private readonly SubmitMessageHandler _handler;
@@ -24,10 +20,6 @@ public class MessageSubmitEndpoint : Endpoint<MessageRequest, MessageResponse>
         _logger = logger;
     }
 
-    /// <summary>
-    /// Configures the single message submission endpoint.
-    /// Requires SubscriptionKey header for tenant authentication.
-    /// </summary>
     public override void Configure()
     {
         Post("/api/message");
@@ -46,12 +38,6 @@ public class MessageSubmitEndpoint : Endpoint<MessageRequest, MessageResponse>
         });
     }
 
-    /// <summary>
-    /// Handles the single message submission request.
-    /// Validates tenant authentication and delegates processing to the command handler.
-    /// </summary>
-    /// <param name="req">The message request to process</param>
-    /// <param name="ct">Cancellation token for request cancellation</param>
     public override async Task HandleAsync(MessageRequest req, CancellationToken ct)
     {
         // Extract and validate subscription key from header
@@ -101,10 +87,6 @@ public class MessageSubmitEndpoint : Endpoint<MessageRequest, MessageResponse>
     }
 }
 
-/// <summary>
-/// FastEndpoints endpoint for submitting multiple messages in a batch for processing.
-/// Provides bulk message submission capability with individual result tracking.
-/// </summary>
 public class BatchMessageSubmitEndpoint : Endpoint<BatchMessageRequest, BatchMessageResponse>
 {
     private readonly SubmitBatchMessageHandler _handler;
@@ -121,10 +103,6 @@ public class BatchMessageSubmitEndpoint : Endpoint<BatchMessageRequest, BatchMes
         _logger = logger;
     }
 
-    /// <summary>
-    /// Configures the batch message submission endpoint.
-    /// Requires SubscriptionKey header for tenant authentication.
-    /// </summary>
     public override void Configure()
     {
         Post("/api/messages");
@@ -141,12 +119,6 @@ public class BatchMessageSubmitEndpoint : Endpoint<BatchMessageRequest, BatchMes
         });
     }
 
-    /// <summary>
-    /// Handles the batch message submission request.
-    /// Validates tenant authentication and delegates processing to the batch command handler.
-    /// </summary>
-    /// <param name="req">The batch message request to process</param>
-    /// <param name="ct">Cancellation token for request cancellation</param>
     public override async Task HandleAsync(BatchMessageRequest req, CancellationToken ct)
     {
         // Extract and validate subscription key from header

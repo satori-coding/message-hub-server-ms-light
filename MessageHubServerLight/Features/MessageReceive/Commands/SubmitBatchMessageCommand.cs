@@ -5,36 +5,22 @@ using MassTransit;
 
 namespace MessageHubServerLight.Features.MessageReceive.Commands;
 
-/// <summary>
-/// Command model for submitting multiple messages as a batch for processing.
-/// Extends single message handling to support bulk operations efficiently.
-/// </summary>
 public class SubmitBatchMessageCommand
 {
-    /// <summary>
-    /// Tenant subscription key for multi-tenant routing and data isolation.
-    /// </summary>
     public string SubscriptionKey { get; set; } = string.Empty;
 
-    /// <summary>
-    /// The batch message request containing multiple individual message requests.
-    /// </summary>
     public BatchMessageRequest BatchRequest { get; set; } = new();
 }
 
-/// <summary>
-/// Command handler for processing batch message submission requests.
-/// Handles validation, persistence, and queuing of multiple messages in a single operation.
-/// </summary>
 public class SubmitBatchMessageHandler
 {
-    private readonly ISqlContext _dbContext;
+    private readonly IDBContext _dbContext;
     private readonly ConfigurationHelper _configHelper;
     private readonly IBusControl _busControl;
     private readonly ILogger<SubmitBatchMessageHandler> _logger;
 
     public SubmitBatchMessageHandler(
-        ISqlContext dbContext,
+        IDBContext dbContext,
         ConfigurationHelper configHelper,
         IBusControl busControl,
         ILogger<SubmitBatchMessageHandler> logger)
@@ -45,12 +31,6 @@ public class SubmitBatchMessageHandler
         _logger = logger;
     }
 
-    /// <summary>
-    /// Handles the batch message submission command by processing each message individually.
-    /// Validates each message, persists successful ones, and provides detailed batch results.
-    /// </summary>
-    /// <param name="command">The batch message submission command to process</param>
-    /// <returns>Batch response with individual results and overall statistics</returns>
     public async Task<BatchMessageResponse> HandleAsync(SubmitBatchMessageCommand command)
     {
         _logger.LogInformation("Processing batch message submission for tenant {SubscriptionKey} with {MessageCount} messages", 
@@ -104,13 +84,6 @@ public class SubmitBatchMessageHandler
         };
     }
 
-    /// <summary>
-    /// Processes a single message within a batch operation.
-    /// Provides individual error handling and result tracking for batch operations.
-    /// </summary>
-    /// <param name="subscriptionKey">The tenant subscription key</param>
-    /// <param name="messageRequest">The individual message request to process</param>
-    /// <returns>Batch result for the individual message</returns>
     private async Task<MessageBatchResult> ProcessSingleMessageInBatch(string subscriptionKey, MessageRequest messageRequest)
     {
         try
@@ -161,13 +134,6 @@ public class SubmitBatchMessageHandler
         }
     }
 
-    /// <summary>
-    /// Creates a new message entity for a batch message and persists it to the database.
-    /// Similar to single message creation but optimized for batch operations.
-    /// </summary>
-    /// <param name="subscriptionKey">The tenant subscription key</param>
-    /// <param name="messageRequest">The message request data</param>
-    /// <returns>The created and persisted message entity</returns>
     private async Task<MessageEntity> CreateMessageEntityAsync(string subscriptionKey, MessageRequest messageRequest)
     {
         var messageEntity = new MessageEntity
@@ -196,11 +162,6 @@ public class SubmitBatchMessageHandler
         return messageEntity;
     }
 
-    /// <summary>
-    /// Publishes a batch message entity to the message bus for async processing.
-    /// Uses the same event structure as single messages for consistent processing.
-    /// </summary>
-    /// <param name="messageEntity">The message entity to queue for processing</param>
     private async Task QueueMessageForProcessingAsync(MessageEntity messageEntity)
     {
         try
@@ -228,13 +189,6 @@ public class SubmitBatchMessageHandler
         }
     }
 
-    /// <summary>
-    /// Updates the status of a batch message in the database.
-    /// Used for handling queueing failures during batch processing.
-    /// </summary>
-    /// <param name="messageId">The message ID to update</param>
-    /// <param name="status">The new status</param>
-    /// <param name="errorMessage">Optional error message for failures</param>
     private async Task UpdateMessageStatusAsync(Guid messageId, string status, string? errorMessage = null)
     {
         const string updateSql = """

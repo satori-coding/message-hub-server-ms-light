@@ -2,34 +2,51 @@ using System.Net;
 using Inetlab.SMPP;
 using Inetlab.SMPP.Common;
 using Inetlab.SMPP.PDU;
+using MessageHubServerLight.Features.MessageReceive.Commands;
 using MessageHubServerLight.Properties;
 using MessageHubServerLight.Features.Channels.Http;
 
 namespace MessageHubServerLight.Features.Channels.Smpp;
 
-/// <summary>
-/// SMPP channel implementation for sending SMS messages via SMPP protocol.
-/// Provides basic SMPP connectivity and message submission functionality.
-/// This is a working sample implementation for Step 1 - advanced features deferred to Step 2.
-/// </summary>
-public class SmppChannel
+public class SmppChannel : IMessageChannel
 {
     private readonly ILogger<SmppChannel> _logger;
+    private readonly ConfigurationHelper _config;
 
-    public SmppChannel(ILogger<SmppChannel> logger)
+    public SmppChannel(ILogger<SmppChannel> logger, ConfigurationHelper config)
     {
         _logger = logger;
+        _config = config;
     }
 
-    /// <summary>
-    /// Sends a message through the SMPP channel using the tenant's configuration.
-    /// Establishes connection, binds as transceiver, submits message, and disconnects.
-    /// This is a basic implementation focused on core functionality.
-    /// </summary>
-    /// <param name="recipient">The recipient's phone number in international format</param>
-    /// <param name="message">The SMS message content to send</param>
-    /// <param name="config">SMPP channel configuration for the tenant</param>
-    /// <returns>Channel delivery result containing success status and message reference</returns>
+    public async Task<ChannelResult> SendMessageAsync(MessageQueuedEvent messageEvent)
+    {
+        _logger.LogInformation("Sending SMPP message {MessageId} to {Recipient} for tenant {SubscriptionKey}", 
+            messageEvent.MessageId, messageEvent.Recipient, messageEvent.SubscriptionKey);
+
+        try
+        {
+            var tenantConfig = _config.GetTenantConfig(messageEvent.SubscriptionKey);
+            var smppConfig = tenantConfig.SMPP;
+
+            var result = await SendMessageAsync(messageEvent.Recipient, messageEvent.MessageContent, smppConfig);
+            
+            if (result.Success)
+            {
+                return ChannelResult.Success(result.ExternalMessageId);
+            }
+            else
+            {
+                return ChannelResult.Failure(result.ErrorMessage ?? "SMPP delivery failed");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception sending SMPP message {MessageId}", messageEvent.MessageId);
+            return ChannelResult.Failure(ex.Message);
+        }
+    }
+
     public async Task<ChannelDeliveryResult> SendMessageAsync(string recipient, string message, SmppChannelConfig config)
     {
         _logger.LogInformation("Sending message via SMPP channel to {Recipient} using host {Host}:{Port}", 
@@ -109,15 +126,6 @@ public class SmppChannel
         }
     }
 
-    /// <summary>
-    /// Submits an SMS message through the established SMPP connection.
-    /// Handles message formatting and submission response processing.
-    /// </summary>
-    /// <param name="client">The connected and bound SMPP client</param>
-    /// <param name="recipient">The recipient phone number</param>
-    /// <param name="message">The message content</param>
-    /// <param name="config">SMPP configuration</param>
-    /// <returns>Delivery result with success status and message reference</returns>
     private async Task<ChannelDeliveryResult> SubmitMessageAsync(
         SmppClient client, 
         string recipient, 
@@ -178,12 +186,6 @@ public class SmppChannel
         }
     }
 
-    /// <summary>
-    /// Tests the SMPP channel configuration by attempting connection and bind.
-    /// Used for configuration validation without sending actual messages.
-    /// </summary>
-    /// <param name="config">The SMPP channel configuration to test</param>
-    /// <returns>True if connection and bind succeed, otherwise false</returns>
     public async Task<bool> TestConfigurationAsync(SmppChannelConfig config)
     {
         _logger.LogInformation("Testing SMPP channel configuration for {Host}:{Port}", config.Host, config.Port);
@@ -241,12 +243,6 @@ public class SmppChannel
         }
     }
 
-    /// <summary>
-    /// Creates a standardized failure result for error conditions.
-    /// Ensures consistent error reporting across SMPP operations.
-    /// </summary>
-    /// <param name="errorMessage">The error description</param>
-    /// <returns>A failure result with the specified error message</returns>
     private static ChannelDeliveryResult CreateFailureResult(string errorMessage)
     {
         return new ChannelDeliveryResult
@@ -258,20 +254,10 @@ public class SmppChannel
     }
 }
 
-/// <summary>
-/// SMPP channel status and configuration information.
-/// Provides metadata about SMPP implementation capabilities and limitations.
-/// </summary>
 public static class SmppChannelInfo
 {
-    /// <summary>
-    /// Current implementation version and feature level.
-    /// </summary>
     public static string Version => "1.0 - Basic Implementation";
 
-    /// <summary>
-    /// Supported SMPP protocol features in this implementation.
-    /// </summary>
     public static string[] SupportedFeatures => new[]
     {
         "SMPP 3.4 protocol",
@@ -281,9 +267,6 @@ public static class SmppChannelInfo
         "Error handling and logging"
     };
 
-    /// <summary>
-    /// Features deferred to future implementation phases.
-    /// </summary>
     public static string[] DeferredFeatures => new[]
     {
         "Delivery receipt processing",
@@ -294,9 +277,6 @@ public static class SmppChannelInfo
         "DLR (Delivery Receipt) correlation"
     };
 
-    /// <summary>
-    /// Configuration requirements and recommendations.
-    /// </summary>
     public static string ConfigurationNotes => 
         "Requires valid SMPP server credentials and network connectivity. " +
         "Recommended timeout values: 30000-60000ms. " +

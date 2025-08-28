@@ -1,32 +1,51 @@
 using System.Text;
 using System.Text.Json;
+using MessageHubServerLight.Features.MessageReceive.Commands;
 using MessageHubServerLight.Properties;
 
 namespace MessageHubServerLight.Features.Channels.Http;
 
-/// <summary>
-/// HTTP channel implementation for sending messages via HTTP APIs.
-/// Provides SMS delivery through HTTP endpoints with configurable retry logic and error handling.
-/// </summary>
-public class HttpChannel
+public class HttpChannel : IMessageChannel
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<HttpChannel> _logger;
+    private readonly ConfigurationHelper _config;
 
-    public HttpChannel(HttpClient httpClient, ILogger<HttpChannel> logger)
+    public HttpChannel(HttpClient httpClient, ILogger<HttpChannel> logger, ConfigurationHelper config)
     {
         _httpClient = httpClient;
         _logger = logger;
+        _config = config;
     }
 
-    /// <summary>
-    /// Sends a message through the HTTP channel using the tenant's configuration.
-    /// Handles HTTP request formatting, authentication, and response processing.
-    /// </summary>
-    /// <param name="recipient">The recipient's phone number or identifier</param>
-    /// <param name="message">The message content to send</param>
-    /// <param name="config">HTTP channel configuration for the tenant</param>
-    /// <returns>Channel delivery result containing success status and external message ID</returns>
+    public async Task<ChannelResult> SendMessageAsync(MessageQueuedEvent messageEvent)
+    {
+        _logger.LogInformation("Sending HTTP message {MessageId} to {Recipient} for tenant {SubscriptionKey}", 
+            messageEvent.MessageId, messageEvent.Recipient, messageEvent.SubscriptionKey);
+
+        try
+        {
+            var tenantConfig = _config.GetTenantConfig(messageEvent.SubscriptionKey);
+            var httpConfig = tenantConfig.HTTP;
+
+            var result = await SendMessageAsync(messageEvent.Recipient, messageEvent.MessageContent, httpConfig);
+            
+            if (result.Success)
+            {
+                return ChannelResult.Success(result.ExternalMessageId);
+            }
+            else
+            {
+                return ChannelResult.Failure(result.ErrorMessage ?? "HTTP delivery failed");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception sending HTTP message {MessageId}", messageEvent.MessageId);
+            return ChannelResult.Failure(ex.Message);
+        }
+    }
+
     public async Task<ChannelDeliveryResult> SendMessageAsync(string recipient, string message, HttpChannelConfig config)
     {
         _logger.LogInformation("Sending message via HTTP channel to {Recipient} using endpoint {Endpoint}", 
@@ -122,14 +141,6 @@ public class HttpChannel
         }
     }
 
-    /// <summary>
-    /// Creates the HTTP request payload for the SMS provider API.
-    /// Formats the message data according to common SMS provider expectations.
-    /// </summary>
-    /// <param name="recipient">The recipient phone number</param>
-    /// <param name="message">The message content</param>
-    /// <param name="config">HTTP channel configuration</param>
-    /// <returns>JSON formatted request payload</returns>
     private static string CreateRequestPayload(string recipient, string message, HttpChannelConfig config)
     {
         // Standard SMS provider payload format
@@ -147,12 +158,6 @@ public class HttpChannel
         });
     }
 
-    /// <summary>
-    /// Attempts to extract an external message ID from the provider response.
-    /// Handles common response formats from various SMS providers.
-    /// </summary>
-    /// <param name="responseContent">The HTTP response content from the provider</param>
-    /// <returns>The external message ID if found, otherwise null</returns>
     private static string? ExtractExternalMessageId(string responseContent)
     {
         if (string.IsNullOrWhiteSpace(responseContent))
@@ -172,7 +177,12 @@ public class HttpChannel
             {
                 if (root.TryGetProperty(field, out var idProperty))
                 {
-                    return idProperty.GetString();
+                    return idProperty.ValueKind switch
+                    {
+                        JsonValueKind.String => idProperty.GetString(),
+                        JsonValueKind.Number => idProperty.GetInt32().ToString(),
+                        _ => idProperty.ToString()
+                    };
                 }
             }
 
@@ -192,12 +202,6 @@ public class HttpChannel
         }
     }
 
-    /// <summary>
-    /// Tests the HTTP channel configuration by sending a test request.
-    /// Used for configuration validation and health checking.
-    /// </summary>
-    /// <param name="config">The HTTP channel configuration to test</param>
-    /// <returns>True if the configuration is working, otherwise false</returns>
     public async Task<bool> TestConfigurationAsync(HttpChannelConfig config)
     {
         _logger.LogInformation("Testing HTTP channel configuration for endpoint {Endpoint}", config.Endpoint);
@@ -224,26 +228,11 @@ public class HttpChannel
     }
 }
 
-/// <summary>
-/// Result structure for channel delivery operations.
-/// Provides standardized response format across all channel types.
-/// </summary>
 public class ChannelDeliveryResult
 {
-    /// <summary>
-    /// Indicates whether the message delivery was successful.
-    /// </summary>
     public bool Success { get; set; }
 
-    /// <summary>
-    /// External message identifier from the delivery provider.
-    /// Used for tracking and correlation with provider systems.
-    /// </summary>
     public string? ExternalMessageId { get; set; }
 
-    /// <summary>
-    /// Error message if delivery failed.
-    /// Contains details for troubleshooting and retry logic.
-    /// </summary>
     public string? ErrorMessage { get; set; }
 }

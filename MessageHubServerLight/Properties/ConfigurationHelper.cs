@@ -2,10 +2,6 @@ using Microsoft.Extensions.Options;
 
 namespace MessageHubServerLight.Properties;
 
-/// <summary>
-/// Configuration helper providing easy access to application settings and tenant configurations.
-/// Centralizes configuration retrieval and validation for multi-tenant operations.
-/// </summary>
 public class ConfigurationHelper
 {
     private readonly AppConfig _appConfig;
@@ -22,12 +18,6 @@ public class ConfigurationHelper
         _logger = logger;
     }
 
-    /// <summary>
-    /// Validates if a subscription key exists and is configured properly.
-    /// Checks tenant existence and channel availability.
-    /// </summary>
-    /// <param name="subscriptionKey">The tenant subscription key to validate</param>
-    /// <returns>True if the subscription key is valid and properly configured</returns>
     public bool IsValidSubscriptionKey(string subscriptionKey)
     {
         if (string.IsNullOrWhiteSpace(subscriptionKey))
@@ -45,12 +35,6 @@ public class ConfigurationHelper
         return exists;
     }
 
-    /// <summary>
-    /// Retrieves tenant configuration by subscription key.
-    /// Returns null if the tenant is not found.
-    /// </summary>
-    /// <param name="subscriptionKey">The tenant subscription key</param>
-    /// <returns>Tenant configuration or null if not found</returns>
     public TenantConfig? GetTenantConfig(string subscriptionKey)
     {
         if (!IsValidSubscriptionKey(subscriptionKey))
@@ -63,14 +47,6 @@ public class ConfigurationHelper
         return config;
     }
 
-    /// <summary>
-    /// Retrieves a specific channel configuration for a tenant.
-    /// Validates both tenant and channel existence.
-    /// </summary>
-    /// <typeparam name="T">The channel configuration type</typeparam>
-    /// <param name="subscriptionKey">The tenant subscription key</param>
-    /// <param name="channelType">The channel type (HTTP, SMPP, etc.)</param>
-    /// <returns>Channel configuration or null if not found</returns>
     public T? GetChannelConfig<T>(string subscriptionKey, string channelType) 
         where T : ChannelConfigBase
     {
@@ -95,12 +71,6 @@ public class ConfigurationHelper
         return channelConfig;
     }
 
-    /// <summary>
-    /// Gets all configured channel types for a specific tenant.
-    /// Useful for validation and capability discovery.
-    /// </summary>
-    /// <param name="subscriptionKey">The tenant subscription key</param>
-    /// <returns>List of available channel types for the tenant</returns>
     public List<string> GetAvailableChannelTypes(string subscriptionKey)
     {
         var tenantConfig = GetTenantConfig(subscriptionKey);
@@ -112,23 +82,12 @@ public class ConfigurationHelper
         return availableChannels;
     }
 
-    /// <summary>
-    /// Validates if a specific channel type is available for a tenant.
-    /// </summary>
-    /// <param name="subscriptionKey">The tenant subscription key</param>
-    /// <param name="channelType">The channel type to check</param>
-    /// <returns>True if the channel is configured and available</returns>
     public bool IsChannelAvailable(string subscriptionKey, string channelType)
     {
         var tenantConfig = GetTenantConfig(subscriptionKey);
         return tenantConfig?.HasChannel(channelType) ?? false;
     }
 
-    /// <summary>
-    /// Gets the MassTransit configuration for message bus setup.
-    /// Determines transport type based on environment and configuration.
-    /// </summary>
-    /// <returns>MassTransit configuration settings</returns>
     public MassTransitConfig GetMassTransitConfig()
     {
         _logger.LogDebug("Using {TransportType} transport for message processing", 
@@ -136,11 +95,6 @@ public class ConfigurationHelper
         return _massTransitConfig;
     }
 
-    /// <summary>
-    /// Gets all configured tenants for administrative and monitoring purposes.
-    /// Returns tenant names mapped to their subscription keys.
-    /// </summary>
-    /// <returns>Dictionary of subscription keys to tenant names</returns>
     public Dictionary<string, string> GetAllTenants()
     {
         return _appConfig.Tenants.ToDictionary(
@@ -149,11 +103,6 @@ public class ConfigurationHelper
         );
     }
 
-    /// <summary>
-    /// Validates the overall application configuration at startup.
-    /// Checks for required settings and tenant configuration completeness.
-    /// </summary>
-    /// <returns>True if configuration is valid for application startup</returns>
     public bool ValidateConfiguration()
     {
         var errors = new List<string>();
@@ -173,7 +122,7 @@ public class ConfigurationHelper
                         Name = "Demo Tenant",
                         HTTP = new HttpChannelConfig
                         {
-                            Endpoint = "https://httpbin.org/post",
+                            Endpoint = "https://jsonplaceholder.typicode.com/posts",
                             ApiKey = "demo",
                             Timeout = 10000,
                             MaxRetries = 1

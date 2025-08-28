@@ -5,36 +5,22 @@ using MassTransit;
 
 namespace MessageHubServerLight.Features.MessageReceive.Commands;
 
-/// <summary>
-/// Command model for submitting a message for processing.
-/// Contains the message data and tenant information for routing and persistence.
-/// </summary>
 public class SubmitMessageCommand
 {
-    /// <summary>
-    /// Tenant subscription key for multi-tenant routing and data isolation.
-    /// </summary>
     public string SubscriptionKey { get; set; } = string.Empty;
 
-    /// <summary>
-    /// The message request containing recipient, content, and channel information.
-    /// </summary>
     public MessageRequest MessageRequest { get; set; } = new();
 }
 
-/// <summary>
-/// Command handler for processing message submission requests.
-/// Handles message validation, persistence, and queuing for async processing.
-/// </summary>
 public class SubmitMessageHandler
 {
-    private readonly ISqlContext _dbContext;
+    private readonly IDBContext _dbContext;
     private readonly ConfigurationHelper _configHelper;
     private readonly IBusControl _busControl;
     private readonly ILogger<SubmitMessageHandler> _logger;
 
     public SubmitMessageHandler(
-        ISqlContext dbContext,
+        IDBContext dbContext,
         ConfigurationHelper configHelper,
         IBusControl busControl,
         ILogger<SubmitMessageHandler> logger)
@@ -45,12 +31,6 @@ public class SubmitMessageHandler
         _logger = logger;
     }
 
-    /// <summary>
-    /// Handles the message submission command by validating, persisting, and queuing the message.
-    /// Creates a new message entity, stores it in the database, and publishes it to the message bus.
-    /// </summary>
-    /// <param name="command">The message submission command to process</param>
-    /// <returns>Message response with ID and status tracking information</returns>
     public async Task<MessageResponse> HandleAsync(SubmitMessageCommand command)
     {
         _logger.LogInformation("Processing message submission for tenant {SubscriptionKey} to recipient {Recipient}", 
@@ -84,11 +64,6 @@ public class SubmitMessageHandler
         }
     }
 
-    /// <summary>
-    /// Validates the command by checking tenant existence and channel availability.
-    /// Throws appropriate exceptions for validation failures.
-    /// </summary>
-    /// <param name="command">The command to validate</param>
     private async Task ValidateCommandAsync(SubmitMessageCommand command)
     {
         // Validate subscription key
@@ -106,12 +81,6 @@ public class SubmitMessageHandler
         await Task.CompletedTask; // Placeholder for any async validation if needed
     }
 
-    /// <summary>
-    /// Creates a new message entity from the command and persists it to the database.
-    /// Generates a unique message ID and sets initial status to "Queued".
-    /// </summary>
-    /// <param name="command">The command containing message data</param>
-    /// <returns>The created and persisted message entity</returns>
     private async Task<MessageEntity> CreateMessageEntityAsync(SubmitMessageCommand command)
     {
         var messageEntity = new MessageEntity
@@ -141,11 +110,6 @@ public class SubmitMessageHandler
         return messageEntity;
     }
 
-    /// <summary>
-    /// Publishes the message entity to the message bus for async processing.
-    /// Uses MassTransit to queue the message for background processing by the MessageProcessor.
-    /// </summary>
-    /// <param name="messageEntity">The message entity to queue for processing</param>
     private async Task QueueMessageForProcessingAsync(MessageEntity messageEntity)
     {
         try
@@ -173,13 +137,6 @@ public class SubmitMessageHandler
         }
     }
 
-    /// <summary>
-    /// Updates the status of a message in the database.
-    /// Used for handling queueing failures and status transitions.
-    /// </summary>
-    /// <param name="messageId">The message ID to update</param>
-    /// <param name="status">The new status</param>
-    /// <param name="errorMessage">Optional error message for failures</param>
     private async Task UpdateMessageStatusAsync(Guid messageId, string status, string? errorMessage = null)
     {
         const string updateSql = """
@@ -201,10 +158,6 @@ public class SubmitMessageHandler
     }
 }
 
-/// <summary>
-/// Event published to the message bus when a message is queued for processing.
-/// Contains all necessary information for the MessageProcessor to handle the message.
-/// </summary>
 public record MessageQueuedEvent
 {
     public Guid MessageId { get; init; }
