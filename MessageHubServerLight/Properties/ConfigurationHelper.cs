@@ -108,35 +108,14 @@ public class ConfigurationHelper
         var errors = new List<string>();
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
 
-        // Validate tenant configurations (more lenient for Local environment)
+
+        // Validate tenant configurations
         if (_appConfig.Tenants == null || _appConfig.Tenants.Count == 0)
         {
-            if (environment == "Local")
-            {
-                _logger.LogWarning("No tenants configured - using demo configuration for local testing");
-                // Add a demo tenant for local testing
-                _appConfig.Tenants = new Dictionary<string, TenantConfig>
-                {
-                    ["demo-key"] = new TenantConfig
-                    {
-                        Name = "Demo Tenant",
-                        HTTP = new HttpChannelConfig
-                        {
-                            Endpoint = "https://jsonplaceholder.typicode.com/posts",
-                            ApiKey = "demo",
-                            Timeout = 10000,
-                            MaxRetries = 1
-                        }
-                    }
-                };
-            }
-            else
-            {
-                errors.Add("No tenants configured in application settings");
-            }
+            errors.Add("No tenants configured in application settings");
         }
 
-        foreach (var tenant in _appConfig.Tenants)
+        foreach (var tenant in _appConfig.Tenants ?? new Dictionary<string, TenantConfig>())
         {
             if (string.IsNullOrWhiteSpace(tenant.Value.Name))
             {
@@ -168,7 +147,7 @@ public class ConfigurationHelper
         }
 
         _logger.LogInformation("Application configuration validated successfully with {TenantCount} tenants", 
-            _appConfig.Tenants.Count);
+            _appConfig.Tenants?.Count ?? 0);
         return true;
     }
 }

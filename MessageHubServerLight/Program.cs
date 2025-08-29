@@ -23,8 +23,11 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 // Configure strongly-typed configuration
-builder.Services.Configure<AppConfig>(
-    builder.Configuration.GetSection(AppConfig.SectionName));
+builder.Services.Configure<AppConfig>(options =>
+{
+    var tenantsSection = builder.Configuration.GetSection("Tenants");
+    options.Tenants = tenantsSection.Get<Dictionary<string, TenantConfig>>() ?? new Dictionary<string, TenantConfig>();
+});
 builder.Services.Configure<MassTransitConfig>(
     builder.Configuration.GetSection(MassTransitConfig.SectionName));
 
