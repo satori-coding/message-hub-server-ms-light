@@ -3,7 +3,7 @@
 
 ### Variables (Working Configuration)
 @host = http://localhost:5000
-@subscriptionKey = demo-key
+@subscriptionKey = ocp-apim-subscription-key-local-1
 
 ### Variables (Alternative keys to test - currently not working)
 # The app auto-creates demo-key when no tenants are configured
@@ -16,7 +16,7 @@ GET {{host}}/ping
 
 ### 1. Send single message (HTTP Channel)
 POST {{host}}/api/message
-SubscriptionKey: {{subscriptionKey}}
+ocp-apim-subscription-key: {{subscriptionKey}}
 Content-Type: application/json
 
 {
@@ -27,7 +27,7 @@ Content-Type: application/json
 
 ### 2. Send single message (SMPP Channel) 
 POST {{host}}/api/message
-SubscriptionKey: {{subscriptionKey}}
+ocp-apim-subscription-key: {{subscriptionKey}}
 Content-Type: application/json
 
 {
@@ -38,7 +38,7 @@ Content-Type: application/json
 
 ### 3. Send batch messages
 POST {{host}}/api/messages
-SubscriptionKey: {{subscriptionKey}}
+ocp-apim-subscription-key: {{subscriptionKey}}
 Content-Type: application/json
 
 {
@@ -64,31 +64,32 @@ Content-Type: application/json
 # - a74de77c-4639-46c1-b12f-1fa3ed1b6c5b
 # - 2ac520e0-55c1-462f-9e35-8ffb6ca9b8a6
 # - a9554fdd-d811-47dc-b305-a2bc202938fc
+# - 2a40ce08-d6b5-4616-951f-75044522b9d9
 
-GET {{host}}/api/messages/a9554fdd-d811-47dc-b305-a2bc202938fc/status
-SubscriptionKey: {{subscriptionKey}}
+GET {{host}}/api/messages/2a40ce08-d6b5-4616-951f-75044522b9d9/status
+ocp-apim-subscription-key: {{subscriptionKey}}
 
 ### 5. Get message history ✅ WORKING
 # Returns list of all messages for the tenant with pagination support
 # Query parameters: limit (default: 50), status (filter by status)
 
 GET {{host}}/api/messages/history
-SubscriptionKey: {{subscriptionKey}}
+ocp-apim-subscription-key: {{subscriptionKey}}
 
 ### 6. Get message history with filters (examples)
 # Get only failed messages (returns empty array since all are "Queued")
 GET {{host}}/api/messages/history?status=Failed
-SubscriptionKey: {{subscriptionKey}}
+ocp-apim-subscription-key: {{subscriptionKey}}
 
 # Get last 3 messages
 GET {{host}}/api/messages/history?limit=3
-SubscriptionKey: {{subscriptionKey}}
+ocp-apim-subscription-key: {{subscriptionKey}}
 
 # Get queued messages with limit  
 GET {{host}}/api/messages/history?status=Queued&limit=5
-SubscriptionKey: {{subscriptionKey}}
+ocp-apim-subscription-key: {{subscriptionKey}}
 
-### Debug: Test without SubscriptionKey to see error message
+### Debug: Test without ocp-apim-subscription-key to see error message
 POST {{host}}/api/message
 Content-Type: application/json
 
@@ -100,7 +101,7 @@ Content-Type: application/json
 
 ### Debug: Test with wrong key to see error message  
 POST {{host}}/api/message
-SubscriptionKey: wrong-key-test
+ocp-apim-subscription-key: wrong-key-test
 Content-Type: application/json
 
 {

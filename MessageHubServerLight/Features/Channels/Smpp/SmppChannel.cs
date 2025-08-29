@@ -65,7 +65,7 @@ public class SmppChannel : IMessageChannel
             _logger.LogDebug("Connecting to SMPP server {Host}:{Port}", config.Host, config.Port);
 
             // Establish connection to SMPP server
-            var connected = await client.ConnectAsync(new DnsEndPoint(config.Host, config.Port));
+            var connected = await client.ConnectAsync(config.Host, config.Port);
             if (!connected)
             {
                 _logger.LogWarning("Failed to connect to SMPP server {Host}:{Port}", config.Host, config.Port);
@@ -74,7 +74,7 @@ public class SmppChannel : IMessageChannel
 
             _logger.LogDebug("Successfully connected to SMPP server, attempting bind as {BindType}", config.BindType);
 
-            // Bind to SMPP server (authenticate)
+            // Bind to SMPP server (authenticate) 
             var bindResponse = await client.BindAsync(config.SystemId, config.Password);
             
             if (bindResponse.Header.Status != CommandStatus.ESME_ROK)

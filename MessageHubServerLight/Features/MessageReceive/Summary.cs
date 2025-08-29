@@ -8,7 +8,7 @@ public static class MessageReceiveSummary
         "Provides endpoints for submitting messages for async processing and delivery. " +
         "Supports both single message and batch submission operations. " +
         "Messages are validated, persisted, and queued for processing by background services. " +
-        "Tenant authentication is handled via SubscriptionKey header validation.";
+        "Tenant authentication is handled via ocp-apim-subscription-key header validation.";
 
     public static string[] Endpoints => new[] 
     { 
@@ -17,13 +17,13 @@ public static class MessageReceiveSummary
     };
 
     public static string Requirements => 
-        "Requires SubscriptionKey header for tenant authentication. " +
+        "Requires ocp-apim-subscription-key header for tenant authentication. " +
         "Database connection for message persistence. " +
         "MassTransit message bus for async processing. " +
         "Tenant configuration for channel validation.";
 
     public static string Authentication => 
-        "SubscriptionKey header validation against configured tenants. " +
+        "ocp-apim-subscription-key header validation against configured tenants. " +
         "Channel type validation against tenant-specific configuration. " +
         "No additional authentication required beyond valid subscription key.";
 
@@ -36,14 +36,14 @@ public static class MessageReceiveSummary
     public static string ResponseFormats => 
         "200 OK: Message(s) successfully queued with tracking information. " +
         "400 Bad Request: Invalid request data or configuration. " +
-        "401 Unauthorized: Invalid or missing SubscriptionKey. " +
+        "401 Unauthorized: Invalid or missing ocp-apim-subscription-key header. " +
         "500 Internal Server Error: Processing failure.";
 
     public static string UsageExamples => 
         """
         Single Message:
         POST /api/message
-        Headers: SubscriptionKey: your-tenant-key
+        Headers: ocp-apim-subscription-key: your-tenant-key
         Body: {
           "recipient": "+1234567890",
           "message": "Hello World",
@@ -52,7 +52,7 @@ public static class MessageReceiveSummary
         
         Batch Messages:
         POST /api/messages
-        Headers: SubscriptionKey: your-tenant-key
+        Headers: ocp-apim-subscription-key: your-tenant-key
         Body: {
           "messages": [
             {

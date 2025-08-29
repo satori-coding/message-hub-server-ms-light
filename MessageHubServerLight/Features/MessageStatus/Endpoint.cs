@@ -23,7 +23,7 @@ public class MessageStatusEndpoint : Endpoint<MessageStatusRequest, MessageStatu
     public override void Configure()
     {
         Get("/api/messages/{messageId}/status");
-        AllowAnonymous(); // Authentication is handled via SubscriptionKey header
+        AllowAnonymous(); // Authentication is handled via ocp-apim-subscription-key header
         
         Summary(s =>
         {
@@ -31,7 +31,7 @@ public class MessageStatusEndpoint : Endpoint<MessageStatusRequest, MessageStatu
             s.Description = "Retrieves detailed status information for a specific message including delivery status, timestamps, and error details";
             s.RequestParam(r => r.MessageId, "Unique message identifier (GUID)");
             s.Response<MessageStatusResponse>(200, "Message status information");
-            s.Response(401, "Invalid or missing SubscriptionKey");
+            s.Response(401, "Invalid or missing ocp-apim-subscription-key header");
             s.Response(404, "Message not found or not accessible to tenant");
         });
     }
@@ -39,18 +39,18 @@ public class MessageStatusEndpoint : Endpoint<MessageStatusRequest, MessageStatu
     public override async Task HandleAsync(MessageStatusRequest req, CancellationToken ct)
     {
         // Extract and validate subscription key from header
-        var subscriptionKey = HttpContext.Request.Headers["SubscriptionKey"].FirstOrDefault();
+        var subscriptionKey = HttpContext.Request.Headers["ocp-apim-subscription-key"].FirstOrDefault();
         
         if (string.IsNullOrWhiteSpace(subscriptionKey))
         {
-            _logger.LogWarning("Message status query attempted without SubscriptionKey header for message {MessageId}", req.MessageId);
+            _logger.LogWarning("Message status query attempted without ocp-apim-subscription-key header for message {MessageId}", req.MessageId);
             await SendAsync(new MessageStatusResponse(), 401, ct);
             return;
         }
 
         if (!_configHelper.IsValidSubscriptionKey(subscriptionKey))
         {
-            _logger.LogWarning("Message status query attempted with invalid SubscriptionKey: {SubscriptionKey} for message {MessageId}", 
+            _logger.LogWarning("Message status query attempted with invalid ocp-apim-subscription-key: {SubscriptionKey} for message {MessageId}", 
                 subscriptionKey, req.MessageId);
             await SendAsync(new MessageStatusResponse(), 401, ct);
             return;
@@ -110,21 +110,21 @@ public class MessageHistoryEndpoint : EndpointWithoutRequest<List<MessageStatusR
     public override void Configure()
     {
         Get("/api/messages/history");
-        AllowAnonymous(); // Authentication is handled via SubscriptionKey header
+        AllowAnonymous(); // Authentication is handled via ocp-apim-subscription-key header
         
         Summary(s =>
         {
             s.Summary = "Get message history for tenant";
             s.Description = "Retrieves a list of recent messages and their status for the authenticated tenant";
             s.Response<List<MessageStatusResponse>>(200, "List of message status information");
-            s.Response(401, "Invalid or missing SubscriptionKey");
+            s.Response(401, "Invalid or missing ocp-apim-subscription-key header");
         });
     }
 
     public override async Task HandleAsync(CancellationToken ct)
     {
         // Extract and validate subscription key from header
-        var subscriptionKey = HttpContext.Request.Headers["SubscriptionKey"].FirstOrDefault();
+        var subscriptionKey = HttpContext.Request.Headers["ocp-apim-subscription-key"].FirstOrDefault();
         
         if (string.IsNullOrWhiteSpace(subscriptionKey) || !_configHelper.IsValidSubscriptionKey(subscriptionKey))
         {

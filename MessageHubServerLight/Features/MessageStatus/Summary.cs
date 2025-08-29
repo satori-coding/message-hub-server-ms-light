@@ -7,7 +7,7 @@ public static class MessageStatusSummary
     public static string Description => 
         "Provides endpoints for querying message delivery status and tracking information. " +
         "Supports individual message status queries and bulk history retrieval. " +
-        "All queries are tenant-isolated and require valid SubscriptionKey authentication. " +
+        "All queries are tenant-isolated and require valid ocp-apim-subscription-key authentication. " +
         "Status information includes processing state, timestamps, delivery confirmations, and error details.";
 
     public static string[] Endpoints => new[] 
@@ -17,13 +17,13 @@ public static class MessageStatusSummary
     };
 
     public static string Requirements => 
-        "Requires SubscriptionKey header for tenant authentication. " +
+        "Requires ocp-apim-subscription-key header for tenant authentication. " +
         "Database connection for message data retrieval. " +
         "Tenant configuration for access validation. " +
         "Message ID validation and tenant data isolation.";
 
     public static string Authentication => 
-        "SubscriptionKey header validation against configured tenants. " +
+        "ocp-apim-subscription-key header validation against configured tenants. " +
         "Tenant data isolation ensures users can only access their own messages. " +
         "Message ID and subscription key combination required for access.";
 
@@ -50,7 +50,7 @@ public static class MessageStatusSummary
         """
         Individual Status Query:
         GET /api/messages/12345678-1234-1234-1234-123456789abc/status
-        Headers: SubscriptionKey: your-tenant-key
+        Headers: ocp-apim-subscription-key: your-tenant-key
         
         Response: {
           "messageId": "12345678-1234-1234-1234-123456789abc",
@@ -66,7 +66,7 @@ public static class MessageStatusSummary
         
         Message History Query:
         GET /api/messages/history?limit=20&status=Failed
-        Headers: SubscriptionKey: your-tenant-key
+        Headers: ocp-apim-subscription-key: your-tenant-key
         
         Response: [
           { /* message status objects */ }
@@ -75,13 +75,13 @@ public static class MessageStatusSummary
 
     public static string ErrorHandling => 
         "200 OK: Status information retrieved successfully. " +
-        "401 Unauthorized: Invalid or missing SubscriptionKey. " +
+        "401 Unauthorized: Invalid or missing ocp-apim-subscription-key header. " +
         "404 Not Found: Message not found or not accessible to tenant. " +
         "500 Internal Server Error: Database or processing failure. " +
         "All errors are logged with correlation information for troubleshooting.";
 
     public static string DataIsolation => 
-        "All status queries are tenant-isolated using SubscriptionKey validation. " +
+        "All status queries are tenant-isolated using ocp-apim-subscription-key validation. " +
         "Tenants can only access status information for their own messages. " +
         "Database queries include tenant filtering to prevent cross-tenant data access. " +
         "Message content is not returned in status responses for privacy.";

@@ -23,7 +23,7 @@ public class MessageSubmitEndpoint : Endpoint<MessageRequest, MessageResponse>
     public override void Configure()
     {
         Post("/api/message");
-        AllowAnonymous(); // Authentication is handled via SubscriptionKey header
+        AllowAnonymous(); // Authentication is handled via ocp-apim-subscription-key header
         
         Summary(s =>
         {
@@ -34,18 +34,18 @@ public class MessageSubmitEndpoint : Endpoint<MessageRequest, MessageResponse>
             s.RequestParam(r => r.ChannelType, "Delivery channel (HTTP, SMPP, etc.)");
             s.Response<MessageResponse>(200, "Message successfully queued");
             s.Response(400, "Invalid request or configuration");
-            s.Response(401, "Invalid or missing SubscriptionKey");
+            s.Response(401, "Invalid or missing ocp-apim-subscription-key header");
         });
     }
 
     public override async Task HandleAsync(MessageRequest req, CancellationToken ct)
     {
         // Extract and validate subscription key from header
-        var subscriptionKey = HttpContext.Request.Headers["SubscriptionKey"].FirstOrDefault();
+        var subscriptionKey = HttpContext.Request.Headers["ocp-apim-subscription-key"].FirstOrDefault();
         
         if (string.IsNullOrWhiteSpace(subscriptionKey))
         {
-            _logger.LogWarning("Message submission attempted without SubscriptionKey header");
+            _logger.LogWarning("Message submission attempted without ocp-apim-subscription-key header");
             await SendAsync(new MessageResponse(), 401, ct);
             return;
         }
@@ -106,7 +106,7 @@ public class BatchMessageSubmitEndpoint : Endpoint<BatchMessageRequest, BatchMes
     public override void Configure()
     {
         Post("/api/messages");
-        AllowAnonymous(); // Authentication is handled via SubscriptionKey header
+        AllowAnonymous(); // Authentication is handled via ocp-apim-subscription-key header
         
         Summary(s =>
         {
@@ -115,18 +115,18 @@ public class BatchMessageSubmitEndpoint : Endpoint<BatchMessageRequest, BatchMes
             s.RequestParam(r => r.Messages, "Array of message requests to process");
             s.Response<BatchMessageResponse>(200, "Batch processing completed with individual results");
             s.Response(400, "Invalid request or configuration");
-            s.Response(401, "Invalid or missing SubscriptionKey");
+            s.Response(401, "Invalid or missing ocp-apim-subscription-key header");
         });
     }
 
     public override async Task HandleAsync(BatchMessageRequest req, CancellationToken ct)
     {
         // Extract and validate subscription key from header
-        var subscriptionKey = HttpContext.Request.Headers["SubscriptionKey"].FirstOrDefault();
+        var subscriptionKey = HttpContext.Request.Headers["ocp-apim-subscription-key"].FirstOrDefault();
         
         if (string.IsNullOrWhiteSpace(subscriptionKey))
         {
-            _logger.LogWarning("Batch message submission attempted without SubscriptionKey header");
+            _logger.LogWarning("Batch message submission attempted without ocp-apim-subscription-key header");
             await SendAsync(new BatchMessageResponse(), 401, ct);
             return;
         }
