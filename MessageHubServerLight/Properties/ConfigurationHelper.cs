@@ -103,6 +103,11 @@ public class ConfigurationHelper
         );
     }
 
+    public Dictionary<string, TenantConfig> GetAllTenantConfigs()
+    {
+        return _appConfig.Tenants;
+    }
+
     public bool ValidateConfiguration()
     {
         var errors = new List<string>();

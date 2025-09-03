@@ -17,14 +17,15 @@ public class ChannelResult
     public bool IsSuccess { get; set; }
     public string? ExternalMessageId { get; set; }
     public string? ErrorMessage { get; set; }
+    public bool IsTransient { get; set; } = false;
 
     public static ChannelResult Success(string? externalMessageId = null)
     {
         return new ChannelResult { IsSuccess = true, ExternalMessageId = externalMessageId };
     }
 
-    public static ChannelResult Failure(string errorMessage)
+    public static ChannelResult Failure(string errorMessage, bool isTransient = false)
     {
-        return new ChannelResult { IsSuccess = false, ErrorMessage = errorMessage };
+        return new ChannelResult { IsSuccess = false, ErrorMessage = errorMessage, IsTransient = isTransient };
     }
 }

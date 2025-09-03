@@ -5,7 +5,10 @@ using MessageHubServerLight.Features.MessageReceive.Commands;
 using MessageHubServerLight.Features.MessageProcessor.Commands;
 using MessageHubServerLight.Features.Channels;
 using MessageHubServerLight.Features.Channels.Http;
-using MessageHubServerLight.Features.Channels.Smpp;
+using MessageHubServerLight.Features.Channels.Smpp.V2;
+using MessageHubServerLight.Features.Channels.Smpp.V2.Interfaces;
+// using MessageHubServerLight.Features.Channels.Smpp.V2.Services; // Removed - implementing new approach
+using MessageHubServerLight.Features.Channels.Smpp.V2.Health;
 using MessageHubServerLight.Properties;
 using Dapper;
 using System.Data;
@@ -59,11 +62,18 @@ builder.Services.AddScoped<MessageHubServerLight.Features.MessageStatus.Queries.
 // Add Channel services
 builder.Services.AddScoped<IChannelFactory, ChannelFactory>();
 builder.Services.AddScoped<HttpChannelV2>();
-builder.Services.AddScoped<SmppChannel>();
+builder.Services.AddScoped<SmppChannelV2>();
+
+// Add SMPP V2 services - temporarily disabled due to Inetlab.SMPP API compatibility issues
+// TODO: Enable when SMPP API issues are resolved
+// builder.Services.AddSingleton<ISmppChannelManager, SmppChannelManager>();
+// builder.Services.AddHostedService<SmppChannelManager>(provider => 
+//     (SmppChannelManager)provider.GetRequiredService<ISmppChannelManager>());
+// builder.Services.AddSingleton<ISmppRateLimiter, SmppRateLimiter>();
 
 // Add HTTP channel supporting services
 builder.Services.AddScoped<IPayloadTemplateEngine, PayloadTemplateEngine>();
-builder.Services.AddSingleton<ITenantRateLimiter, TenantRateLimiter>();
+builder.Services.AddSingleton<ITenantRateLimiter, MessageHubServerLight.Features.Channels.Http.TenantRateLimiter>();
 
 // Configure HttpClient factory with per-tenant clients
 ConfigureHttpClients(builder.Services, builder.Configuration);
@@ -96,6 +106,10 @@ builder.Services.AddMassTransit(x =>
         });
     }
 });
+
+// Add Health Checks - SMPP health check temporarily disabled
+builder.Services.AddHealthChecks();
+    // .AddCheck<SmppHealthCheck>("smpp_connections");
 
 // Add FastEndpoints
 builder.Services.AddFastEndpoints();
