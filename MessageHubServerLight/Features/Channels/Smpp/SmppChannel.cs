@@ -2,9 +2,9 @@ using System.Net;
 using Inetlab.SMPP;
 using Inetlab.SMPP.Common;
 using Inetlab.SMPP.PDU;
+using MessageHubServerLight.Features.Channels;
 using MessageHubServerLight.Features.MessageReceive.Commands;
 using MessageHubServerLight.Properties;
-using MessageHubServerLight.Features.Channels.Http;
 
 namespace MessageHubServerLight.Features.Channels.Smpp;
 

@@ -16,7 +16,7 @@ public class ChannelFactory : IChannelFactory
     {
         return channelType.ToUpper() switch
         {
-            "HTTP" => _serviceProvider.GetRequiredService<HttpChannel>(),
+            "HTTP" => _serviceProvider.GetRequiredService<HttpChannelV2>(),
             "SMPP" => _serviceProvider.GetRequiredService<SmppChannel>(),
             _ => throw new ArgumentException($"Unknown channel type: {channelType}")
         };

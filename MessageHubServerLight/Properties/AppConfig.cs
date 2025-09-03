@@ -46,10 +46,27 @@ public class HttpChannelConfig : ChannelConfigBase
     public string Endpoint { get; set; } = string.Empty;
 
     public string ApiKey { get; set; } = string.Empty;
+    
+    public string? ApiSecret { get; set; }
 
     public int MaxRetries { get; set; } = 3;
 
     public Dictionary<string, string> CustomHeaders { get; set; } = new();
+
+    // Rate limiting configuration
+    public int? MaxRequestsPerSecond { get; set; } = 10;
+
+    // Circuit breaker configuration
+    public int? CircuitBreakerFailureThreshold { get; set; } = 5;
+    public int? CircuitBreakerRecoveryTimeout { get; set; } = 30;
+
+    // Payload template configuration
+    public string? ProviderType { get; set; } = "Generic"; // Twilio, Vonage, MessageBird, TextMagic, Custom, Generic
+    public string? SenderId { get; set; }
+    public string? CustomPayloadTemplate { get; set; }
+
+    // Authentication type
+    public string? AuthType { get; set; } = "Bearer"; // Bearer, ApiKey, HMAC, Custom
 }
 
 public class SmppChannelConfig : ChannelConfigBase

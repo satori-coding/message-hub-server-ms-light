@@ -58,9 +58,15 @@ builder.Services.AddScoped<MessageHubServerLight.Features.MessageStatus.Queries.
 
 // Add Channel services
 builder.Services.AddScoped<IChannelFactory, ChannelFactory>();
-builder.Services.AddScoped<HttpChannel>();
+builder.Services.AddScoped<HttpChannelV2>();
 builder.Services.AddScoped<SmppChannel>();
-builder.Services.AddHttpClient<HttpChannel>();
+
+// Add HTTP channel supporting services
+builder.Services.AddScoped<IPayloadTemplateEngine, PayloadTemplateEngine>();
+builder.Services.AddSingleton<ITenantRateLimiter, TenantRateLimiter>();
+
+// Configure HttpClient factory with per-tenant clients
+ConfigureHttpClients(builder.Services, builder.Configuration);
 
 // Configure MassTransit with environment-specific transport
 var massTransitConfig = builder.Configuration
@@ -178,6 +184,56 @@ app.Lifetime.ApplicationStopping.Register(async () =>
 });
 
 app.Run();
+
+static void ConfigureHttpClients(IServiceCollection services, IConfiguration configuration)
+{
+    var appConfig = new AppConfig();
+    var tenantsSection = configuration.GetSection("Tenants");
+    appConfig.Tenants = tenantsSection.Get<Dictionary<string, TenantConfig>>() ?? new Dictionary<string, TenantConfig>();
+
+    // Configure a default HttpClient for config testing
+    services.AddHttpClient("config_test", client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(10);
+    });
+
+    // Configure per-tenant HttpClients with Polly policies
+    foreach (var tenant in appConfig.Tenants)
+    {
+        var httpConfig = tenant.Value.HTTP;
+        if (httpConfig == null) continue;
+
+        var clientName = $"tenant_{tenant.Key}";
+        
+        services.AddHttpClient(clientName, client =>
+        {
+            client.Timeout = TimeSpan.FromMilliseconds(httpConfig.Timeout + 1000); // Add buffer for Polly timeout
+            client.DefaultRequestHeaders.Clear();
+            
+            // Set base address if configured
+            if (!string.IsNullOrWhiteSpace(httpConfig.Endpoint))
+            {
+                try
+                {
+                    var uri = new Uri(httpConfig.Endpoint);
+                    if (uri.Scheme == "https" || uri.Scheme == "http")
+                    {
+                        client.BaseAddress = new Uri($"{uri.Scheme}://{uri.Host}");
+                    }
+                }
+                catch
+                {
+                    // Invalid URI, will be handled in channel
+                }
+            }
+        })
+        .AddPolicyHandler((services, request) =>
+        {
+            var logger = services.GetRequiredService<ILogger<Program>>();
+            return MessageHubServerLight.Features.Channels.Http.HttpChannelPolicies.GetCombinedPolicy(httpConfig, logger);
+        });
+    }
+}
 
 public class GuidTypeHandler : SqlMapper.TypeHandler<Guid>
 {
