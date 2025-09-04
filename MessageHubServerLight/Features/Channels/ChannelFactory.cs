@@ -1,5 +1,5 @@
 using MessageHubServerLight.Features.Channels.Http;
-using MessageHubServerLight.Features.Channels.Smpp.V2;
+using MessageHubServerLight.Features.Channels.Smpp;
 
 namespace MessageHubServerLight.Features.Channels;
 
@@ -17,7 +17,7 @@ public class ChannelFactory : IChannelFactory
         return channelType.ToUpper() switch
         {
             "HTTP" => _serviceProvider.GetRequiredService<HttpChannelV2>(),
-            "SMPP" => _serviceProvider.GetRequiredService<SmppChannelV2>(),
+            "SMPP" => _serviceProvider.GetRequiredService<SmppChannel>(),
             _ => throw new ArgumentException($"Unknown channel type: {channelType}")
         };
     }

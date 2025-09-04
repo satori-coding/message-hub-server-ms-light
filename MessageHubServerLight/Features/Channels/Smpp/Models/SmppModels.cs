@@ -1,4 +1,4 @@
-namespace MessageHubServerLight.Features.Channels.Smpp.V2.Models;
+namespace MessageHubServerLight.Features.Channels.Smpp.Models;
 
 public class SmsMessage
 {

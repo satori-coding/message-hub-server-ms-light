@@ -7,7 +7,7 @@ using MessageHubServerLight.Properties;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 
-namespace MessageHubServerLight.Features.Channels.Smpp.V2;
+namespace MessageHubServerLight.Features.Channels.Smpp;
 
 /// <summary>
 /// Production-ready SMPP Channel V2 with native Inetlab.SMPP features:
@@ -16,16 +16,16 @@ namespace MessageHubServerLight.Features.Channels.Smpp.V2;
 /// - Native EnquireLinkInterval for keep-alive
 /// - Proper event handling for Delivery Receipts
 /// </summary>
-public class SmppChannelV2 : IMessageChannel, IDisposable
+public class SmppChannel : IMessageChannel, IDisposable
 {
-    private readonly ILogger<SmppChannelV2> _logger;
+    private readonly ILogger<SmppChannel> _logger;
     private readonly ConfigurationHelper _configHelper;
     private readonly ConcurrentDictionary<string, SmppConnectionPool> _connectionPools = new();
     private readonly ConcurrentDictionary<string, SmppDeliveryReceiptProcessor> _dlrProcessors = new();
     private readonly ConcurrentDictionary<string, int> _throttleRetryCounts = new();
     private bool _disposed = false;
 
-    public SmppChannelV2(ILogger<SmppChannelV2> logger, ConfigurationHelper configHelper)
+    public SmppChannel(ILogger<SmppChannel> logger, ConfigurationHelper configHelper)
     {
         _logger = logger;
         _configHelper = configHelper;
@@ -33,12 +33,12 @@ public class SmppChannelV2 : IMessageChannel, IDisposable
 
     public async Task<ChannelResult> SendMessageAsync(MessageQueuedEvent messageEvent)
     {
-        using var activity = Activity.Current?.Source.StartActivity("SmppChannelV2.SendMessage");
-        activity?.SetTag("channel.type", "SMPP_V2");
+        using var activity = Activity.Current?.Source.StartActivity("SmppChannel.SendMessage");
+        activity?.SetTag("channel.type", "SMPP");
         activity?.SetTag("tenant.key", messageEvent.SubscriptionKey);
         activity?.SetTag("message.id", messageEvent.MessageId);
 
-        _logger.LogInformation("Sending SMPP V2 message {MessageId} to {Recipient} for tenant {SubscriptionKey}",
+        _logger.LogInformation("Sending SMPP message {MessageId} to {Recipient} for tenant {SubscriptionKey}",
             messageEvent.MessageId, messageEvent.Recipient, messageEvent.SubscriptionKey);
 
         try
@@ -65,15 +65,15 @@ public class SmppChannelV2 : IMessageChannel, IDisposable
                     var dlrProcessor = GetOrCreateDlrProcessor(messageEvent.SubscriptionKey);
                     await dlrProcessor.StoreCorrelationAsync(messageEvent.MessageId, result.ExternalMessageId!);
                     
-                    _logger.LogInformation("SMPP V2 message {MessageId} sent successfully with external ID {ExternalMessageId}",
+                    _logger.LogInformation("SMPP message {MessageId} sent successfully with external ID {ExternalMessageId}",
                         messageEvent.MessageId, result.ExternalMessageId);
                     return ChannelResult.Success(result.ExternalMessageId);
                 }
                 else
                 {
-                    _logger.LogWarning("SMPP V2 message {MessageId} failed: {ErrorMessage}",
+                    _logger.LogWarning("SMPP message {MessageId} failed: {ErrorMessage}",
                         messageEvent.MessageId, result.ErrorMessage);
-                    return ChannelResult.Failure(result.ErrorMessage ?? "SMPP V2 delivery failed", result.IsTransient);
+                    return ChannelResult.Failure(result.ErrorMessage ?? "SMPP delivery failed", result.IsTransient);
                 }
             }
             finally
@@ -83,9 +83,9 @@ public class SmppChannelV2 : IMessageChannel, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error sending SMPP V2 message {MessageId}",
+            _logger.LogError(ex, "Unexpected error sending SMPP message {MessageId}",
                 messageEvent.MessageId);
-            return ChannelResult.Failure($"SMPP V2 delivery error: {ex.Message}");
+            return ChannelResult.Failure($"SMPP delivery error: {ex.Message}");
         }
     }
 
@@ -110,7 +110,7 @@ public class SmppChannelV2 : IMessageChannel, IDisposable
                 // This would need to be set on the resulting SubmitSm PDUs
             }
 
-            _logger.LogDebug("Submitting SMPP V2 message from {From} to {To}, length: {Length}, DLR mask: {DlrMask}",
+            _logger.LogDebug("Submitting SMPP message from {From} to {To}, length: {Length}, DLR mask: {DlrMask}",
                 config.SourceAddress, messageEvent.Recipient, messageEvent.MessageContent.Length, config.DeliveryReceipts.DlrMask);
 
             // Submit message to SMPP server
@@ -152,7 +152,7 @@ public class SmppChannelV2 : IMessageChannel, IDisposable
 
                 if (failedSubmissions.Any())
                 {
-                    _logger.LogWarning("SMPP V2 message partially successful: {SuccessCount} successful, {FailedCount} failed",
+                    _logger.LogWarning("SMPP message partially successful: {SuccessCount} successful, {FailedCount} failed",
                         successfulSubmissions.Count, failedSubmissions.Count);
                 }
 
@@ -176,19 +176,19 @@ public class SmppChannelV2 : IMessageChannel, IDisposable
                 {
                     Success = false,
                     ExternalMessageId = null,
-                    ErrorMessage = $"SMPP V2 submission failed: {errorStatus}",
+                    ErrorMessage = $"SMPP submission failed: {errorStatus}",
                     IsTransient = isTransient
                 };
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during SMPP V2 message submission");
+            _logger.LogError(ex, "Error during SMPP message submission");
             return new ChannelDeliveryResult
             {
                 Success = false,
                 ExternalMessageId = null,
-                ErrorMessage = $"SMPP V2 submission error: {ex.Message}",
+                ErrorMessage = $"SMPP submission error: {ex.Message}",
                 IsTransient = true // Most exceptions are transient
             };
         }
@@ -210,7 +210,7 @@ public class SmppChannelV2 : IMessageChannel, IDisposable
     {
         return _connectionPools.GetOrAdd(tenantKey, key =>
         {
-            _logger.LogInformation("Creating SMPP V2 connection pool for tenant {TenantKey}", tenantKey);
+            _logger.LogInformation("Creating SMPP connection pool for tenant {TenantKey}", tenantKey);
             var pool = new SmppConnectionPool(tenantKey, config, _logger);
             
             // Set event handler for delivery receipts
@@ -252,7 +252,7 @@ public class SmppChannelV2 : IMessageChannel, IDisposable
         _dlrProcessors.Clear();
         _throttleRetryCounts.Clear();
 
-        _logger.LogInformation("SMPP Channel V2 disposed");
+        _logger.LogInformation("SMPP Channel disposed");
     }
 }
 
@@ -307,7 +307,7 @@ public class SmppConnectionPool : IDisposable
             }
         }
 
-        _logger.LogInformation("Initialized SMPP V2 connection pool for tenant {TenantKey} with {Count} clients",
+        _logger.LogInformation("Initialized SMPP connection pool for tenant {TenantKey} with {Count} clients",
             _tenantKey, _currentCount);
     }
 
@@ -503,7 +503,7 @@ public class ChannelDeliveryResult
     public bool IsTransient { get; set; } = false;
 }
 
-public static class SmppChannelV2Info
+public static class SmppChannelInfo
 {
     public static string Version => "2.1 - Native Inetlab.SMPP Features Correctly Implemented";
 

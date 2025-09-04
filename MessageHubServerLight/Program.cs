@@ -5,7 +5,7 @@ using MessageHubServerLight.Features.MessageReceive.Commands;
 using MessageHubServerLight.Features.MessageProcessor.Commands;
 using MessageHubServerLight.Features.Channels;
 using MessageHubServerLight.Features.Channels.Http;
-using MessageHubServerLight.Features.Channels.Smpp.V2;
+using MessageHubServerLight.Features.Channels.Smpp;
 // using MessageHubServerLight.Features.Channels.Smpp.V2.Services; // Removed - implementing new approach
 using MessageHubServerLight.Properties;
 using Dapper;
@@ -60,7 +60,7 @@ builder.Services.AddScoped<MessageHubServerLight.Features.MessageStatus.Queries.
 // Add Channel services
 builder.Services.AddScoped<IChannelFactory, ChannelFactory>();
 builder.Services.AddScoped<HttpChannelV2>();
-builder.Services.AddScoped<SmppChannelV2>();
+builder.Services.AddScoped<SmppChannel>();
 
 
 // Add HTTP channel supporting services

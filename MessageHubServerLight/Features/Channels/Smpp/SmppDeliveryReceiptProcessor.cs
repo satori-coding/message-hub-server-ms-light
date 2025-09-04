@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using Inetlab.SMPP.PDU;
 using Inetlab.SMPP.Common;
 
-namespace MessageHubServerLight.Features.Channels.Smpp.V2;
+namespace MessageHubServerLight.Features.Channels.Smpp;
 
 /// <summary>
 /// Processes SMPP Delivery Receipts (DLR) with correlation mapping
