@@ -1,0 +1,166 @@
+### Message Hub Server MS Light - Basic API Tests
+### Host: http://localhost:5000
+### Environment: Local Development
+
+### 1. Health Check
+GET http://localhost:5000/ping
+
+###
+
+### 2. Single SMPP Message - Success Test
+POST http://localhost:5000/api/message
+Content-Type: application/json
+ocp-apim-subscription-key: ocp-apim-subscription-key-local-1
+
+{
+  "recipient": "+49123456789",
+  "message": "Test message via SMPP",
+  "channelType": "SMPP"
+}
+
+###
+
+### 3. Single HTTP Message - Success Test  
+POST http://localhost:5000/api/message
+Content-Type: application/json
+ocp-apim-subscription-key: ocp-apim-subscription-key-local-2
+
+{
+  "recipient": "+1234567890", 
+  "message": "Test message via HTTP Twilio",
+  "channelType": "HTTP"
+}
+
+###
+
+### 4. Batch Messages Test
+POST http://localhost:5000/api/messages/batch
+Content-Type: application/json
+ocp-apim-subscription-key: ocp-apim-subscription-key-local-1
+
+{
+  "messages": [
+    {
+      "recipient": "+49123456001",
+      "message": "Batch message 1",
+      "channelType": "SMPP"
+    },
+    {
+      "recipient": "+49123456002", 
+      "message": "Batch message 2",
+      "channelType": "SMPP"
+    },
+    {
+      "recipient": "+49123456003",
+      "message": "Batch message 3", 
+      "channelType": "SMPP"
+    }
+  ]
+}
+
+###
+
+### 5. Message Status Check (Replace {messageId} with actual ID from previous responses)
+GET http://localhost:5000/api/messages/YOUR_MESSAGE_ID_HERE/status
+ocp-apim-subscription-key: ocp-apim-subscription-key-local-1
+
+###
+
+### 6. Authentication Test - Invalid Key (Should return 401)
+POST http://localhost:5000/api/message
+Content-Type: application/json
+ocp-apim-subscription-key: invalid-key-test
+
+{
+  "recipient": "+49123456789",
+  "message": "This should fail",
+  "channelType": "SMPP"
+}
+
+###
+
+### 7. Custom Template Test (Customer C)
+POST http://localhost:5000/api/message
+Content-Type: application/json
+ocp-apim-subscription-key: ocp-apim-subscription-key-local-3
+
+{
+  "recipient": "+49123456999",
+  "message": "Custom template test message",
+  "channelType": "HTTP"
+}
+
+###
+
+### 8. Rate Limiting Test - Send 5 messages quickly to trigger native SendSpeedLimit
+POST http://localhost:5000/api/message
+Content-Type: application/json
+ocp-apim-subscription-key: ocp-apim-subscription-key-local-1
+
+{
+  "recipient": "+49123456101",
+  "message": "Rate limit test message 1",
+  "channelType": "SMPP"
+}
+
+###
+
+POST http://localhost:5000/api/message
+Content-Type: application/json
+ocp-apim-subscription-key: ocp-apim-subscription-key-local-1
+
+{
+  "recipient": "+49123456102", 
+  "message": "Rate limit test message 2",
+  "channelType": "SMPP"
+}
+
+###
+
+POST http://localhost:5000/api/message
+Content-Type: application/json
+ocp-apim-subscription-key: ocp-apim-subscription-key-local-1
+
+{
+  "recipient": "+49123456103",
+  "message": "Rate limit test message 3", 
+  "channelType": "SMPP"
+}
+
+###
+
+### 9. Missing Required Fields Test (Should return 400)
+POST http://localhost:5000/api/message
+Content-Type: application/json
+ocp-apim-subscription-key: ocp-apim-subscription-key-local-1
+
+{
+  "recipient": "+49123456789"
+  // Missing message and channelType
+}
+
+###
+
+### 10. Invalid Channel Type Test (Should return 400)
+POST http://localhost:5000/api/message
+Content-Type: application/json
+ocp-apim-subscription-key: ocp-apim-subscription-key-local-1
+
+{
+  "recipient": "+49123456789",
+  "message": "Test message",
+  "channelType": "INVALID"
+}
+
+###
+
+## Instructions:
+## 1. Make sure the application is running: dotnet run -c Release
+## 2. Execute requests one by one in your HTTP client
+## 3. For test #5, copy a real messageId from previous responses
+## 4. Watch application logs to see SMPP native features working
+## 5. Expected results:
+##    - Tests 1-5, 7-8: Should return 200/201 with messageId
+##    - Test 6: Should return 401 Unauthorized  
+##    - Tests 9-10: Should return 400 Bad Request
+##    - Rate limiting: Messages processed at 2 msg/sec (native SendSpeedLimit)
